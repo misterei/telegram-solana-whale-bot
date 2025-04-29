@@ -79,7 +79,14 @@ def main():
     app.job_queue.run_repeating(keep_alive, interval=600, first=60)  # check every 10 min
 
     print("🤖 Bot started. Monitoring for Solana whales...")
-    app.run_polling()
+    PORT = int(os.environ.get('PORT', '8443'))
+    WEBHOOK_URL = os.getenv('WEBHOOK_URL')  # You need to set this
+
+    app.run_webhook(
+    	listen='0.0.0.0',
+    	port=PORT,
+   	webhook_url=WEBHOOK_URL
+)
 
 if __name__ == '__main__':
     main()
