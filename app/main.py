@@ -70,11 +70,14 @@ async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
             )
 
 # === Main Entrypoint ===
+async def webhook_ready(app):
+    print(\"✅ Webhook initialized successfully!\")
+
 def main():
     if not TELEGRAM_BOT_TOKEN or not CHAT_ID or not WEBHOOK_URL:
         raise ValueError("Missing TELEGRAM_BOT_TOKEN, CHAT_ID, or WEBHOOK_URL environment variable.")
 
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).post_init(webhook_ready).build()
 
     # Commands
     app.add_handler(CommandHandler("start", start))
