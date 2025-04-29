@@ -7,7 +7,7 @@ from whale_finder import find_whales
 # === Environment Variables ===
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 300))
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 300))  # How often to scan whales (default 5 min)
 
 # === Global scan status ===
 scan_status = {
@@ -28,9 +28,9 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg += f"\n⚠️ Last error: {scan_status['last_error']}"
     else:
         msg = "⏳ Bot has not scanned yet."
-
     await update.message.reply_text(msg)
 
+# === Whale Scanner Job ===
 async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
     print("🔎 Running whale scan job...")
     try:
@@ -56,11 +56,11 @@ async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
         scan_status["last_error"] = str(e)
         print(f"🚨 Error while fetching whales: {e}")
 
-
+# === Keep-Alive Job ===
 async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
     if scan_status["last_scan"]:
         elapsed = (datetime.now(UTC) - scan_status["last_scan"]).seconds
-        if scan_status["last_count"] == 0 and elapsed >= 1800:
+        if scan_status["last_count"] == 0 and elapsed >= 1800:  # 30 minutes
             await context.bot.send_message(chat_id=CHAT_ID, text="✅ Still scanning... no whales detected yet.")
 
 # === Main Entrypoint ===
@@ -77,7 +77,8 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("status", status))
 
-    application.job_queue.run_repeating(poll_whales, interval=POLL_INTERVAL, first=10)
+    # Immediately start whale scan after container starts (first=0)
+    application.job_queue.run_repeating(poll_whales, interval=POLL_INTERVAL, first=0)
     application.job_queue.run_repeating(keep_alive, interval=600, first=60)
 
     print("🚀 Bot started using polling mode.")
