@@ -63,14 +63,13 @@ async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
 
 # === Webhook Handler ===
 async def telegram_webhook(request):
-    print("🔥 RAW POST received!")
     try:
-        data = await request.text()
-        print("🔥 RAW Body:", data)
-        return web.Response(status=200, text="OK")
+        payload = await request.json()
+        print("🔥 Incoming webhook:", payload)
+        return web.Response(text="OK", status=200)
     except Exception as e:
-        print("🚨 Error parsing POST:", e)
-        return web.Response(status=500, text="Internal Error")
+        print("🚨 Webhook Error:", e)
+        return web.Response(status=500, text="Webhook Error")
 
 # === aiohttp Startup Event ===
 async def on_startup(app):
