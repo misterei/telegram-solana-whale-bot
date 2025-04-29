@@ -28,14 +28,18 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg += f"\n⚠️ Last error: {scan_status['last_error']}"
     else:
         msg = "⏳ Bot has not scanned yet."
+
     await update.message.reply_text(msg)
 
 async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
+    print("🔎 Running whale scan job...")
     try:
         whales = await find_whales()
         scan_status["last_scan"] = datetime.now(UTC)
         scan_status["last_count"] = len(whales)
         scan_status["last_error"] = None
+
+        print(f"✅ Whale scan complete. Found {len(whales)} whales.")
 
         for whale in whales:
             msg = (
@@ -50,7 +54,8 @@ async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         scan_status["last_scan"] = datetime.now(UTC)
         scan_status["last_error"] = str(e)
-        print(f"Error while fetching whales: {e}")
+        print(f"🚨 Error while fetching whales: {e}")
+
 
 async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
     if scan_status["last_scan"]:
