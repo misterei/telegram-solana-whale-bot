@@ -64,6 +64,7 @@ async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
 # === Webhook Handler ===
 async def telegram_webhook(request):
     data = await request.json()
+    print("🔥 Incoming Telegram Update:", data)  # << ADD THIS LINE
     update = Update.de_json(data, request.app["bot"].bot)
     await request.app["bot"].process_update(update)
     return web.Response()
