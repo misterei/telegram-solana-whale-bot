@@ -8,9 +8,9 @@ from whale_finder import find_whales
 # === Environment Variables ===
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-PORT = int(os.getenv("PORT", "8443"))
+PORT = int(os.getenv("PORT", 80))  # default to 80 now
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 300))
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 600))
 
 # === Global scan status ===
 scan_status = {
