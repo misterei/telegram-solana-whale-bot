@@ -1,10 +1,11 @@
 import aiohttp
 import os
+import asyncio
 from solana_utils import get_wallet_balance, get_wallet_age
 
-MIN_BALANCE_USD = float(os.getenv("MIN_BALANCE_USD", 100000))
-MIN_WALLET_AGE_DAYS = int(os.getenv("MIN_WALLET_AGE_DAYS", 5))
-DEX_PAIRS_LIMIT = int(os.getenv("DEX_PAIRS_LIMIT", 10))
+MIN_BALANCE_USD = float(os.getenv("MIN_BALANCE_USD", 2000))  # $2000 minimum
+MIN_WALLET_AGE_DAYS = int(os.getenv("MIN_WALLET_AGE_DAYS", 0))  # Allow 0 days
+DEX_PAIRS_LIMIT = int(os.getenv("DEX_PAIRS_LIMIT", 5))
 SEARCH_QUERY = os.getenv("SEARCH_QUERY", "SOL")
 
 DEX_SEARCH_URL = "https://api.dexscreener.com/latest/dex/search"
@@ -53,13 +54,17 @@ async def find_whales():
     # 3️⃣ Filter wallets
     qualified = []
     for addr in wallets:
-        balance = await get_wallet_balance(addr)
-        age_days = await get_wallet_age(addr)
-        if balance >= MIN_BALANCE_USD and age_days >= MIN_WALLET_AGE_DAYS:
-            qualified.append({
-                "address": addr,
-                "balance": balance,
-                "age_days": age_days
-            })
+        try:
+            balance = await get_wallet_balance(addr)
+            age_days = await get_wallet_age(addr)
+            if balance >= MIN_BALANCE_USD and age_days >= MIN_WALLET_AGE_DAYS:
+                qualified.append({
+                    "address": addr,
+                    "balance": balance,
+                    "age_days": age_days
+                })
+            await asyncio.sleep(0.3)  # to avoid rate limits
+        except Exception as e:
+            print(f"Skipping wallet {addr} due to error: {e}")
 
     return qualified

@@ -7,7 +7,7 @@ from whale_finder import find_whales
 # === Environment Variables ===
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 300))  # How often to scan whales (default 5 min)
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 300))  # Default every 5 min
 
 # === Global scan status ===
 scan_status = {
@@ -16,7 +16,7 @@ scan_status = {
     "last_error": None
 }
 
-# === Telegram Bot Handlers ===
+# === Telegram Handlers ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🤖 Bot is alive and running (Polling Mode)!")
 
@@ -56,11 +56,11 @@ async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
         scan_status["last_error"] = str(e)
         print(f"🚨 Error while fetching whales: {e}")
 
-# === Keep-Alive Job ===
+# === Keep Alive Job ===
 async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
     if scan_status["last_scan"]:
         elapsed = (datetime.now(UTC) - scan_status["last_scan"]).seconds
-        if scan_status["last_count"] == 0 and elapsed >= 1800:  # 30 minutes
+        if scan_status["last_count"] == 0 and elapsed >= 1800:
             await context.bot.send_message(chat_id=CHAT_ID, text="✅ Still scanning... no whales detected yet.")
 
 # === Main Entrypoint ===
@@ -68,16 +68,10 @@ def main():
     if not TELEGRAM_BOT_TOKEN or not CHAT_ID:
         raise ValueError("Missing TELEGRAM_BOT_TOKEN or CHAT_ID!")
 
-    application = (
-        ApplicationBuilder()
-        .token(TELEGRAM_BOT_TOKEN)
-        .build()
-    )
-
+    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("status", status))
 
-    # Immediately start whale scan after container starts (first=0)
     application.job_queue.run_repeating(poll_whales, interval=POLL_INTERVAL, first=0)
     application.job_queue.run_repeating(keep_alive, interval=600, first=60)
 

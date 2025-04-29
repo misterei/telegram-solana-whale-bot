@@ -14,7 +14,7 @@ async def get_sol_price():
             data = await resp.json()
             return data.get("solana", {}).get("usd", 0)
 
-# === Balance using Helius or fallback to RPC ===
+# === Get Balance ===
 async def get_wallet_balance(wallet_address: str) -> float:
     if HELIUS_API_KEY:
         helius_url = f"{HELIUS_BASE}/addresses/{wallet_address}/balances?api-key={HELIUS_API_KEY}"
@@ -39,7 +39,7 @@ async def get_wallet_balance(wallet_address: str) -> float:
     price = await get_sol_price()
     return sol * price
 
-# === Wallet Age using Helius or fallback to RPC ===
+# === Get Wallet Age ===
 async def get_wallet_age(wallet_address: str) -> int:
     if HELIUS_API_KEY:
         helius_url = f"{HELIUS_BASE}/addresses/{wallet_address}/transactions?api-key={HELIUS_API_KEY}&limit=1&sort=asc"
