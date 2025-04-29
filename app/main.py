@@ -71,7 +71,7 @@ async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
 
 # === Main Entrypoint ===
 async def webhook_ready(app):
-    print(\"✅ Webhook initialized successfully!\")
+    print("✅ Webhook initialized successfully!")
 
 def main():
     if not TELEGRAM_BOT_TOKEN or not CHAT_ID or not WEBHOOK_URL:
