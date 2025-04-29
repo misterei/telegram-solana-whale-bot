@@ -1,106 +1,51 @@
 import os
-from datetime import datetime, UTC
 from aiohttp import web
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from whale_finder import find_whales
 
-# === Environment Variables ===
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-PORT = int(os.getenv("PORT", 10000))  # Render uses dynamic ports like 10000+
+PORT = int(os.getenv("PORT", 10000))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", 300))
 
-# === Global scan status ===
-scan_status = {
-    "last_scan": None,
-    "last_count": 0,
-    "last_error": None
-}
-
-# === Telegram Bot Handlers ===
+# --- Start Command ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 Bot is alive and running via webhook on Render!")
+    await update.message.reply_text("✅ Hello! Your bot is alive and running.")
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if scan_status["last_scan"]:
-        last_time = scan_status["last_scan"].strftime('%Y-%m-%d %H:%M:%S')
-        msg = f"📊 Last scan: {last_time}\nWhales found: {scan_status['last_count']}"
-        if scan_status["last_error"]:
-            msg += f"\n⚠️ Last error: {scan_status['last_error']}"
-    else:
-        msg = "⏳ Bot has not scanned yet."
-    await update.message.reply_text(msg)
-
-async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
-    try:
-        whales = await find_whales()
-        scan_status["last_scan"] = datetime.now(UTC)
-        scan_status["last_count"] = len(whales)
-        scan_status["last_error"] = None
-
-        for whale in whales:
-            msg = (
-                f"🐋 *New Whale Detected!*\n"
-                f"*Address:* `{whale['address']}`\n"
-                f"*Balance:* ${whale['balance']:,}\n"
-                f"*Wallet Age:* {whale['age_days']} days"
-            )
-            if whale['balance'] >= 5_000_000:
-                msg += " 🔥💎"
-            await context.bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode="Markdown")
-    except Exception as e:
-        scan_status["last_scan"] = datetime.now(UTC)
-        scan_status["last_error"] = str(e)
-        print(f"Error while fetching whales: {e}")
-
-async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
-    if scan_status["last_scan"]:
-        elapsed = (datetime.now(UTC) - scan_status["last_scan"]).seconds
-        if scan_status["last_count"] == 0 and elapsed >= 1800:
-            await context.bot.send_message(chat_id=CHAT_ID, text="✅ Still scanning... no whales detected yet.")
-
-# === Webhook handler for aiohttp ===
+# --- Webhook Handler ---
 async def telegram_webhook(request):
     try:
         data = await request.json()
         update = Update.de_json(data, request.app["bot"].bot)
         await request.app["bot"].process_update(update)
-        print("🔥 Webhook Update Processed:", data)
+        print("🔥 Webhook received:", data)
         return web.Response(status=200, text="OK")
     except Exception as e:
-        print("🚨 Error in webhook processing:", e)
-        return web.Response(status=500, text="Webhook Error")
+        print("🚨 Webhook error:", e)
+        return web.Response(status=500, text="Error")
 
-# === Health Check ===
+# --- Healthcheck ---
 async def healthcheck(request):
     return web.Response(text="OK", status=200)
 
-# === aiohttp Startup Event ===
+# --- Startup Event ---
 async def on_startup(app):
     await app["bot"].initialize()
     await app["bot"].start()
     await app["bot"].bot.set_webhook(url=WEBHOOK_URL)
-    print(f"✅ Webhook set successfully at {WEBHOOK_URL}")
+    print(f"✅ Webhook set to {WEBHOOK_URL}")
 
-# === aiohttp Cleanup Event ===
+# --- Cleanup Event ---
 async def on_cleanup(app):
     await app["bot"].stop()
-    print("🛑 Telegram Bot Stopped.")
+    print("🛑 Bot stopped.")
 
-# === Main Entrypoint ===
+# --- Main Entrypoint ---
 def main():
-    if not TELEGRAM_BOT_TOKEN or not CHAT_ID or not WEBHOOK_URL:
-        raise ValueError("Missing TELEGRAM_BOT_TOKEN, CHAT_ID, or WEBHOOK_URL!")
+    if not TELEGRAM_BOT_TOKEN or not WEBHOOK_URL:
+        raise Exception("Missing TELEGRAM_BOT_TOKEN or WEBHOOK_URL!")
 
     bot_app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-
     bot_app.add_handler(CommandHandler("start", start))
-    bot_app.add_handler(CommandHandler("status", status))
-
-    bot_app.job_queue.run_repeating(poll_whales, interval=POLL_INTERVAL, first=10)
-    bot_app.job_queue.run_repeating(keep_alive, interval=600, first=60)
 
     web_app = web.Application()
     web_app["bot"] = bot_app
@@ -110,7 +55,7 @@ def main():
     web_app.on_startup.append(on_startup)
     web_app.on_cleanup.append(on_cleanup)
 
-    print(f"🚀 Running aiohttp server on port {PORT}")
+    print(f"🚀 Server running on port {PORT}")
     web.run_app(web_app, port=PORT)
 
 if __name__ == "__main__":
