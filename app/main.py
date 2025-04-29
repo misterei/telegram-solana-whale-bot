@@ -72,30 +72,38 @@ async def telegram_webhook(request):
 async def healthcheck(request):
     return web.Response(text="OK", status=200)
 
+# === aiohttp Startup Event ===
+async def on_startup(app):
+    await app["bot"].initialize()
+    await app["bot"].start()
+    await app["bot"].bot.set_webhook(WEBHOOK_URL)
+    print("✅ Bot Application initialized and webhook set!")
+
+# === aiohttp Cleanup Event ===
+async def on_cleanup(app):
+    await app["bot"].stop()
+    print("🛑 Bot Application stopped!")
+
 # === Main Entrypoint ===
 def main():
     if not TELEGRAM_BOT_TOKEN or not CHAT_ID or not WEBHOOK_URL:
         raise ValueError("Missing TELEGRAM_BOT_TOKEN, CHAT_ID, or WEBHOOK_URL")
 
-    application = (
-        ApplicationBuilder()
-        .token(TELEGRAM_BOT_TOKEN)
-        .build()
-    )
+    bot_app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Add command handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("status", status))
+    bot_app.add_handler(CommandHandler("start", start))
+    bot_app.add_handler(CommandHandler("status", status))
 
-    # Schedule whale scanning and keep alive jobs
-    application.job_queue.run_repeating(poll_whales, interval=POLL_INTERVAL, first=10)
-    application.job_queue.run_repeating(keep_alive, interval=600, first=60)
+    bot_app.job_queue.run_repeating(poll_whales, interval=POLL_INTERVAL, first=10)
+    bot_app.job_queue.run_repeating(keep_alive, interval=600, first=60)
 
-    # Setup aiohttp app
     web_app = web.Application()
-    web_app["bot"] = application
+    web_app["bot"] = bot_app
     web_app.router.add_post("/", telegram_webhook)
     web_app.router.add_get("/ping", healthcheck)
+
+    web_app.on_startup.append(on_startup)
+    web_app.on_cleanup.append(on_cleanup)
 
     print(f"🚀 Running aiohttp server on port {PORT}")
     web.run_app(web_app, port=PORT)
