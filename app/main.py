@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime, UTC
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from whale_finder import find_whales
@@ -32,7 +32,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
     try:
         whales = await find_whales()
-        scan_status["last_scan"] = datetime.datetime.utcnow()
+        scan_status["last_scan"] = datetime.now(UTC)
         scan_status["last_count"] = len(whales)
         scan_status["last_error"] = None
 
@@ -51,13 +51,13 @@ async def poll_whales(context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
     except Exception as e:
-        scan_status["last_scan"] = datetime.datetime.utcnow()
+        scan_status["last_scan"] = datetime.now(UTC)
         scan_status["last_error"] = str(e)
         print(f"Error while fetching whales: {e}")
 
 async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
     if scan_status["last_scan"]:
-        elapsed = (datetime.datetime.utcnow() - scan_status["last_scan"]).seconds
+        elapsed = (datetime.now(UTC) - scan_status["last_scan"]).seconds
         if scan_status["last_count"] == 0 and elapsed >= 1800:  # 30 mins
             await context.bot.send_message(
                 chat_id=CHAT_ID,
