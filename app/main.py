@@ -64,26 +64,25 @@ async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
 # === Webhook Handler ===
 async def telegram_webhook(request):
     data = await request.json()
-    print("🔥 Incoming Telegram Update:", data)  # << ADD THIS LINE
     update = Update.de_json(data, request.app["bot"].bot)
     await request.app["bot"].process_update(update)
     return web.Response()
-
-# === Healthcheck ===
-async def healthcheck(request):
-    return web.Response(text="OK", status=200)
 
 # === aiohttp Startup Event ===
 async def on_startup(app):
     await app["bot"].initialize()
     await app["bot"].start()
-    await app["bot"].bot.set_webhook(WEBHOOK_URL)
-    print("✅ Bot Application initialized and webhook set!")
+    await app["bot"].bot.set_webhook(url=WEBHOOK_URL)
+    print(f"✅ Telegram Bot initialized and Webhook set to {WEBHOOK_URL}")
 
 # === aiohttp Cleanup Event ===
 async def on_cleanup(app):
     await app["bot"].stop()
-    print("🛑 Bot Application stopped!")
+    print("🛑 Telegram Bot stopped!")
+
+# === Healthcheck for Railway ===
+async def healthcheck(request):
+    return web.Response(text="OK", status=200)
 
 # === Main Entrypoint ===
 def main():
