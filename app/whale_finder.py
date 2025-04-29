@@ -7,7 +7,7 @@ MIN_BALANCE_USD = float(os.getenv("MIN_BALANCE_USD", 100000))  # $100k+
 MIN_WALLET_AGE_DAYS = int(os.getenv("MIN_WALLET_AGE_DAYS", 5))  # 5 days+
 DEX_PAIRS_LIMIT = int(os.getenv("DEX_PAIRS_LIMIT", 10))        # top N pools
 
-DEX_PAIRS_URL = "https://api.dexscreener.com/latest/dex/pairs/solana"
+DEX_SEARCH_URL = "https://api.dexscreener.com/latest/dex/search"
 DEX_TRADES_URL = "https://api.dexscreener.com/latest/dex/trades?pairAddress={}"
 
 async def find_whales():
