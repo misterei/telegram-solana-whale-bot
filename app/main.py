@@ -2,9 +2,8 @@ import asyncio
 import os
 from telegram import Bot
 from whale_finder import find_whales
-from dotenv import load_dotenv
 
-load_dotenv()
+# Environment variables (set via Railway or hosting service)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # your target chat or channel ID
 

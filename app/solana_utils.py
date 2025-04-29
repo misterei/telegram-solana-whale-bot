@@ -46,7 +46,6 @@ async def get_wallet_age(wallet_address: str) -> int:
             sigs = res.get("result", [])
             if not sigs:
                 return 0
-            # fetch the oldest of the returned signatures
             sig = sigs[-1]
             ts = sig.get("blockTime")
             if not ts:
